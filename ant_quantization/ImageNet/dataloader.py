@@ -279,9 +279,9 @@ def get_imagenet_dataloader_official(batch_size=256, dataset_path=None):
 
 def get_dataloader(name, batch_size, dataset_path, model_arch=None, *arg, **kargs):
     if name == 'cifar10':
-        return get_cifar10_dataloader(batch_size, dataset_path, *arg, **kargs)
+        return get_cifar10_dataloader(batch_size, *arg, **kargs)
     elif name == 'cifar100':
-        return get_cifar100_dataloader(batch_size, dataset_path, *arg, **kargs)
+        return get_cifar100_dataloader(batch_size, *arg, **kargs)
     elif name == 'imagenet':
         return dali_get_imagenet_dataloader(batch_size, dataset_path, model_arch=model_arch, *arg, **kargs)
         # return get_imagenet_dataloader(batch_size, dataset_path, *arg, **kargs)
