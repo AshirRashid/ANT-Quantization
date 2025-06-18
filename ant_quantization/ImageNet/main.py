@@ -25,7 +25,7 @@ parser.add_argument('--ckpt_path', default=None, type=str,
                     help='checkpoint path')
 parser.add_argument('--dataset', default='cifar10', type=str, 
                     help='dataset name')
-parser.add_argument('--dataset_path', default='/nvme/imagenet', type=str, 
+parser.add_argument('--dataset_path', default='/data/Datasets/ImageNet/ILSVRC/Data/CLS-LOC/', type=str, 
                     help='dataset path')
 parser.add_argument('--model', default='resnet18', type=str, 
                     help='model name')
@@ -250,8 +250,11 @@ def test():
     total = 0     
     with torch.no_grad():
         for batch_idx, data in enumerate(testloader):
-            inputs = data[0]["data"]
-            targets = data[0]["label"].squeeze(-1).long()
+            # breakpoint()
+            # inputs = data[0]["data"]
+            # targets = data[0]["label"].squeeze(-1).long()
+            inputs = data[0].cuda()
+            targets = data[1].squeeze(-1).long().cuda()
             
             outputs = model(inputs)
             loss = criterion(outputs, targets)
@@ -277,7 +280,7 @@ def test():
             ave_loss = test_loss/total
 
     acc = 100.*correct/total
-    testloader.reset()
+    # testloader.reset()
 
     acc_ave = reduce_ave_tensor(torch.tensor(acc).to(device)).item()
     if local_rank == 0:
