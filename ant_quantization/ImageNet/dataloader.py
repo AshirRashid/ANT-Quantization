@@ -276,6 +276,51 @@ def get_imagenet_dataloader_official(batch_size=256, dataset_path=None):
         num_workers=6, pin_memory=True)
     return train_loader, val_loader
 
+def get_imagenet_dataloader_official_single_gpu(batch_size=256, dataset_path=None):
+    print('==> Using Pytorch Dataset')
+    img_dir = dataset_path
+    input_size = 224
+    traindir = os.path.join(img_dir, 'train')
+    valdir = os.path.join(img_dir, 'validation')
+
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
+
+    # torchvision.set_image_backend('accimage')
+
+    train_transform = transforms.Compose([
+        transforms.Resize(256),
+        transforms.RandomCrop(input_size),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        normalize,
+    ])
+    val_transform = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(input_size),
+        transforms.ToTensor(),
+        normalize,
+    ])
+
+    train_dataset = datasets.ImageFolder(traindir, transform=train_transform)
+    val_dataset = datasets.ImageFolder(valdir, transform=val_transform)
+
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=6,
+        pin_memory=True
+    )
+    val_loader = torch.utils.data.DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=6,
+        pin_memory=True
+    )
+
+    return train_loader, val_loader
 
 def get_dataloader(name, batch_size, dataset_path, model_arch=None, *arg, **kargs):
     if name == 'cifar10':
@@ -284,7 +329,8 @@ def get_dataloader(name, batch_size, dataset_path, model_arch=None, *arg, **karg
         return get_cifar100_dataloader(batch_size, *arg, **kargs)
     elif name == 'imagenet':
         # return dali_get_imagenet_dataloader(batch_size, dataset_path, model_arch=model_arch, *arg, **kargs)
-        # return get_imagenet_dataloader(batch_size, dataset_path, *arg, **kargs)
-        return get_imagenet_dataloader_official(batch_size, dataset_path, *arg, **kargs)
+        return get_imagenet_dataloader(batch_size, dataset_path, *arg, **kargs)
+        # return get_imagenet_dataloader_official_single_gpu(batch_size, dataset_path, *arg, **kargs)
+        # return get_imagenet_dataloader_official(batch_size, dataset_path, *arg, **kargs)
     else:
         raise RuntimeError("Unkown dataloader")

@@ -614,6 +614,7 @@ class Conv2dQuantizer(nn.Module):
         weight = self.quant_weight(self.weight, input)
         input = self.quant_input(input, self.weight)
         # print("convolution", input.unique().numel(), self.quant_input.name)
+        self.qweight = weight
         return self._conv_forward(input, weight)
 
 

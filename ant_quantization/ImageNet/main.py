@@ -25,7 +25,7 @@ parser.add_argument('--ckpt_path', default=None, type=str,
                     help='checkpoint path')
 parser.add_argument('--dataset', default='cifar10', type=str, 
                     help='dataset name')
-parser.add_argument('--dataset_path', default='/data/Datasets/ImageNet/ILSVRC/Data/CLS-LOC/', type=str, 
+parser.add_argument('--dataset_path', default='/home/ar7789/ANT-Quantization/ant_quantization/data/', type=str, 
                     help='dataset path')
 parser.add_argument('--model', default='resnet18', type=str, 
                     help='model name')
@@ -78,9 +78,10 @@ start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 
 dist.init_process_group(backend='nccl')
 local_rank = args.local_rank
+local_rank = 0
 if torch.cuda.is_available():
-    torch.cuda.set_device(local_rank)
-    device = torch.device("cuda", local_rank)
+    torch.cuda.set_device(min(local_rank, 2))
+    device = torch.device("cuda", min(local_rank, 2))
     cudnn.benchmark = True
 
 # output path
@@ -163,6 +164,7 @@ if args.resume:
 
 
 model = torch.nn.parallel.DistributedDataParallel(model, find_unused_parameters=True)
+# model = model.cuda()
 
 def reduce_ave_tensor(tensor):
     rt = tensor.clone()
@@ -184,8 +186,10 @@ def train(epoch):
     best_acc = 0
 
     for batch_idx, data in enumerate(trainloader):
-        inputs = data[0]["data"]
-        targets = data[0]["label"].squeeze(-1).long()
+        # inputs = data[0]["data"]
+        # targets = data[0]["label"].squeeze(-1).long()
+        inputs = data[0].cuda()
+        targets = data[1].squeeze(-1).long().cuda()
 
         if batch_idx == 0 and epoch == 0  and args.layer_8bit_n != 0:
             model(inputs)
@@ -213,7 +217,7 @@ def train(epoch):
 
         if local_rank == 0:
             if batch_idx % 100 == 0:
-                logger.info('test: [epoch: %d | batch: %d/%d ] | Loss: %.3f | Acc: %.3f%% (%d/%d)'
+                logger.info('train: [epoch: %d | batch: %d/%d ] | Loss: %.3f | Acc: %.3f%% (%d/%d)'
                             % (epoch, batch_idx, len(trainloader), train_loss/(batch_idx+1), acc, correct_sum, total_sum))
         
         # if batch_idx == 1000:
@@ -232,7 +236,7 @@ def train(epoch):
                 'scheduler': scheduler.state_dict()
             }
             torch.save(state, get_ckpt_filename(output_path, epoch))
-    trainloader.reset()
+    # trainloader.reset()
 
 # Post-Training Quantization
 def ptq_init():
